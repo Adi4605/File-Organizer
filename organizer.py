@@ -3,12 +3,23 @@ from pathlib import Path
 
 # mapping extensions to their folders
 EXT_MAP = {
-    'Images': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'],
-    'Videos': ['.mp4', '.mkv', '.avi', '.mov'],
-    'Docs': ['.pdf', '.docx', '.doc', '.txt', '.xlsx', '.csv'],
-    'Audio': ['.mp3', '.wav', '.flac'],
-    'Archives': ['.zip', '.tar', '.gz', '.rar', '.7z']
+    'Images': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff', '.heic', '.raw'],
+    'Videos': ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm'],
+    'Docs': ['.pdf', '.docx', '.doc', '.txt', '.xls', '.xlsx', '.csv', '.rtf', '.odt', '.ppt', '.pptx', '.epub'],
+    'Audio': ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.opus'],
+    'Archives': ['.zip', '.tar', '.gz', '.rar', '.7z', '.pkg'],
+    'Codes': ['.py', '.js', '.html', '.css', '.java', '.cpp', '.c', '.sh', '.json', '.ipynb'],
+    'Executables': ['.exe', '.msi', '.dmg', '.deb', '.app'],
+    'Fonts': ['.ttf', '.otf', '.woff']
 }
+
+def is_project_folder(target_dir):
+    """Quick check for common project markers to avoid nuking a codebase."""
+    markers = ['.git', 'package.json', 'requirements.txt', 'pom.xml']
+    for marker in markers:
+        if (target_dir / marker).exists():
+            return True
+    return False
 
 def sort_files(target_dir):
     p = Path(target_dir)
@@ -17,11 +28,24 @@ def sort_files(target_dir):
         print("Bad path. Try again.")
         return
 
-    print(f"Sorting files in {target_dir}...")
+    # 1. THE DANGER ZONE SAFEGUARD
+    if is_project_folder(p):
+        print("\nWARNING: This looks like a programming project (found .git or package files).")
+        confirm = input("Are you sure you want to run the organizer here? (y/n): ")
+        if confirm.lower() != 'y':
+            print("Aborting. Your project is safe.")
+            return
+
+    print(f"\nSorting files in {target_dir}...")
     
     for item in p.iterdir():
-        # ignore folders and hidden files
-        if item.is_dir() or item.name.startswith('.'):
+        # 2. THE MAC .APP QUIRK FIX
+        # Ignore folders, UNLESS it ends in .app
+        if item.is_dir() and item.suffix.lower() != '.app':
+            continue
+            
+        # Ignore hidden files
+        if item.name.startswith('.'):
             continue
 
         ext = item.suffix.lower()
@@ -38,7 +62,7 @@ def sort_files(target_dir):
         dest_path = p / dest_folder
         dest_path.mkdir(exist_ok=True)
         
-        # handle duplicate file names by appending a number
+        # handle duplicate file names
         final_dest = dest_path / item.name
         counter = 1
         while final_dest.exists():
