@@ -1,12 +1,23 @@
-A quick Python utility script to automatically clean up messy folders (like your Downloads folder) by sorting files into categorized subfolders based on their extensions (Images, Videos, Documents, etc.). 
+# File Organizer
 
-Works on Windows and Linux out of the box.
+A lightweight, cross-platform utility to instantly clean up messy folders (like your `Downloads` or `Desktop`). It automatically sorts files into subfolders (`Images`, `Videos`, `Docs`, etc.) based on their extensions.
 
 ## Features
-- Sorts files by extension into logical folders.
-- Unrecognized files just get dumped into an "Other" folder.
-- **Safe moving:** Won't overwrite your stuff. If a duplicate file exists, it quickly renames the new one (e.g., `file_1.txt`) so nothing gets lost.
-- Uses Python's built-in `pathlib` so it handles file paths perfectly across different operating systems.
+* **Drag & Drop GUI**: Built with TkinterDnD. Just drop a folder path in and click go.
+* **Duplicate Safe**: Automatically renames files (e.g., `image_1.jpg`) instead of accidentally overwriting your stuff.
+* **Danger Zone Protection**: Scans for `.git` or `package.json` files and warns you before sorting, so you don't accidentally nuke a coding project.
+* **History**: Remembers the last 5 folders you sorted in a handy dropdown menu.
 
-## Setup
-If you're pulling this down from Git, just clone it and run it. No need for a virtual environment or pip installs.
+## Download & Run (The Easy Way)
+You don't need Python installed to use this. 
+1. Go to the **Releases** tab on the right.
+2. Download the latest `.zip` for your OS (Windows or Linux).
+3. Extract it and double-click the executable to use.
+
+## Run from Source (The Dev Way)
+If you want to run or tweak the raw Python code:
+
+1. Clone the repo.
+2. Install the drag-and-drop dependency:
+   ```bash
+   python -m pip install tkinterdnd2
