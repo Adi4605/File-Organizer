@@ -17,7 +17,7 @@ EXT_MAP = {
     'Fonts': ['.ttf', '.otf', '.woff']
 }
 
-HISTORY_FILE = Path(__file__).parent / ".recent_paths.json"
+HISTORY_FILE = Path.home() / ".file_organizer_history.json"
 
 class OrganizerApp(TkinterDnD.Tk):
     def __init__(self):
@@ -55,10 +55,7 @@ class OrganizerApp(TkinterDnD.Tk):
 
         self.path_entry = ttk.Combobox(self, values=self.history, width=58, font=("Arial", 10))
         self.path_entry.pack(pady=5)
-
-        # if self.history:
-        #     self.path_entry.set(self.history[0])
-        
+     
         self.path_entry.drop_target_register(DND_FILES)
         self.path_entry.dnd_bind('<<Drop>>', self.handle_drop)
         
@@ -77,8 +74,12 @@ class OrganizerApp(TkinterDnD.Tk):
 
     def handle_drop(self, event):
         self.path_entry.delete(0, tk.END) 
-        clean_path = event.data.strip('{}')
-        self.path_entry.insert(0, clean_path) 
+        clean_path = event.data.strip('{}""\'')
+        
+        if clean_path.startswith("file://"):
+            clean_path = clean_path.replace("file://", "")
+            
+        self.path_entry.insert(0, clean_path)
 
     def is_project_folder(self, target_dir):
         markers = ['.git', 'package.json', 'requirements.txt', 'pom.xml']
@@ -112,6 +113,8 @@ class OrganizerApp(TkinterDnD.Tk):
                 continue
             if item.name.startswith('.'):
                 continue
+            if item.name in ['gui_organizer.py', 'gui_organizer']:
+                continue
 
             ext = item.suffix.lower()
             if not ext:
@@ -139,8 +142,7 @@ class OrganizerApp(TkinterDnD.Tk):
                 self.log(f"Couldn't move {item.name}: {e}")
                 
         self.log("Done sorting!\n")
-        
-        # Save the successful path to history
+
         self.save_history(str(p))
         
         self.path_entry.set("")
