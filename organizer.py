@@ -1,4 +1,5 @@
 import shutil
+import json
 from pathlib import Path
 
 # mapping extensions to their folders
@@ -13,6 +14,21 @@ EXT_MAP = {
     'Fonts': ['.ttf', '.otf', '.woff']
 }
 
+HISTORY_FILE = Path(__file__).parent / ".recent_paths.json"
+
+def load_history():
+    if HISTORY_FILE.exists():
+        try:
+            with open(HISTORY_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+def save_history(paths):
+    with open(HISTORY_FILE, 'w') as f:
+        json.dump(paths[:5], f) # keep only the last 5 paths
+
 def is_project_folder(target_dir):
     """Quick check for common project markers to avoid nuking a codebase."""
     markers = ['.git', 'package.json', 'requirements.txt', 'pom.xml']
@@ -22,29 +38,28 @@ def is_project_folder(target_dir):
     return False
 
 def sort_files(target_dir):
-    p = Path(target_dir)
+    # for linux path using '~' sign
+    p = Path(target_dir).expanduser().resolve()
     
     if not p.is_dir():
-        print("Bad path. Try again.")
-        return
+        print(f"Bad path: {p}. Try again.")
+        return None
 
-    # 1. THE DANGER ZONE SAFEGUARD
     if is_project_folder(p):
         print("\nWARNING: This looks like a programming project (found .git or package files).")
         confirm = input("Are you sure you want to run the organizer here? (y/n): ")
         if confirm.lower() != 'y':
             print("Aborting. Your project is safe.")
-            return
+            return None
 
-    print(f"\nSorting files in {target_dir}...")
+    print(f"\nSorting files in {p}...")
     
     for item in p.iterdir():
-        # 2. THE MAC .APP QUIRK FIX
-        # Ignore folders, UNLESS it ends in .app
+        # ignore folders UNLESS it ends in .app
         if item.is_dir() and item.suffix.lower() != '.app':
             continue
             
-        # Ignore hidden files
+        # ignore hidden files
         if item.name.startswith('.'):
             continue
 
@@ -52,7 +67,6 @@ def sort_files(target_dir):
         if not ext:
             continue 
 
-        # find the right folder, default to 'Other'
         dest_folder = "Other"
         for folder, extensions in EXT_MAP.items():
             if ext in extensions:
@@ -74,8 +88,41 @@ def sort_files(target_dir):
             print(f"Moved: {item.name} -> {dest_folder}/")
         except Exception as e:
             print(f"Couldn't move {item.name}: {e}")
+            
+    return str(p)
 
 if __name__ == '__main__':
-    folder = input("Folder path to organize: ").strip('\"\'')
-    sort_files(folder)
+    history = load_history()
+    
+    if history:
+        print("\nRecent folders:")
+        for i, path in enumerate(history, 1):
+            print(f"[{i}] {path}")
+        print("[0] Enter a new path")
+        
+        choice = input("\nSelect a number, or just paste a new path: ").strip('\"\'')
+        
+        if choice.isdigit() and 1 <= int(choice) <= len(history):
+            folder = history[int(choice) - 1]
+        elif choice == '0':
+            folder = input("Folder path to organize: ").strip('\"\'')
+        else:
+            folder = choice
+    else:
+        folder = input("Folder path to organize (e.g., ~/Downloads): ").strip('\"\'')
+
+    # THE FIX: Keep asking until they actually type something
+    while not folder:
+        print("You didn't enter anything!")
+        folder = input("Please enter a valid folder path: ").strip('\"\'')
+
+    # Run the organizer and update history if successful
+    success_path = sort_files(folder)
+    
+    if success_path:
+        if success_path in history:
+            history.remove(success_path)
+        history.insert(0, success_path)
+        save_history(history)
+        
     print("Done!")
